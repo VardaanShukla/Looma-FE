@@ -12,9 +12,9 @@ comes from the Looma backend, [DevDash-BE](https://github.com/VardaanShukla/DevD
 which also serves a built copy of this page. The backend's README describes every feature,
 how to install Looma and every endpoint.
 
-Looma was called DevDash until November 2026. Only the name changed: the command is still
-`devdash` (`looma` works too once installed from this version), your data stays in `~/.devdash`,
-the `DEVDASH_*` settings and the `/api` addresses are the same, and the repos keep their names.
+Looma was called Looma until November 2026. Only the name changed: the command is still
+`looma` (`looma` works too once installed from this version), your data stays in `~/.looma`,
+the `LOOMA_*` settings and the `/api` addresses are the same, and the repos keep their names.
 
 ## Use it
 
@@ -23,7 +23,7 @@ this page. On Linux, macOS or Windows:
 
 ```sh
 pipx install git+https://github.com/VardaanShukla/DevDash-BE.git
-devdash serve
+looma serve
 ```
 
 Then open http://127.0.0.1:8765. See the backend's README for more.
@@ -32,7 +32,7 @@ Then open http://127.0.0.1:8765. See the backend's README for more.
 
 Needs Node 18 or newer.
 
-1. Keep the backend running: `devdash serve`.
+1. Keep the backend running: `looma serve`.
 2. In this repo, start the dev server, which reloads as you edit:
 
    ```sh

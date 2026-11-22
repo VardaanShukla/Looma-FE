@@ -27,14 +27,14 @@ type Turn = AskTurn & { files?: string[]; read?: string[]; follow_ups?: string[]
 // Questions to start with, shown while the conversation is empty.
 const STARTERS = [
   "What does this project do, and who is it for?",
-  "How do I set it up and run it?",
-  "Which files should I read first?",
+  "Which commands set it up, run it and test it?",
   "How does the main flow work, step by step?",
+  "How do I see what my AI changed today in Looma?",
 ];
 
 // Turns kept per conversation, in memory and in this browser.
 const KEPT = 40;
-const STORAGE = "devdash:ask:";
+const STORAGE = "looma:ask:";
 
 const chats = new Map<string, Turn[]>();
 
@@ -217,7 +217,7 @@ export default function Ask({ scope, project, ai, ask, onSignedIn }: Props) {
               </button>
             ))}
           </div>
-          <p className="qa__note">Looma explains your code. It never changes it.</p>
+          <p className="qa__note">Ask about the project or about Looma. Answers can include commands to copy; Looma never changes your files.</p>
         </div>
       ) : (
         <>
@@ -298,7 +298,7 @@ export default function Ask({ scope, project, ai, ask, onSignedIn }: Props) {
           <div className="qa__dock">
             {composer}
             <p className="qa__note">
-              <kbd>Enter</kbd> to send, <kbd>Shift</kbd>+<kbd>Enter</kbd> for a new line. Looma explains your code; it never changes it.
+              <kbd>Enter</kbd> to send, <kbd>Shift</kbd>+<kbd>Enter</kbd> for a new line. Looma never changes your files.
             </p>
           </div>
         </>
@@ -307,11 +307,25 @@ export default function Ask({ scope, project, ai, ask, onSignedIn }: Props) {
   );
 }
 
-// The answer's own light formatting: paragraphs, "- " and "1. " lists and `names`. A list may
-// follow its lead-in line in the same paragraph.
+// The answer's own light formatting: fenced code blocks (with their language and a Copy
+// button), paragraphs, "- " and "1. " lists, `names` and **bold**. A list may follow its
+// lead-in line in the same paragraph.
 const BULLET = /^\s*(?:[-*•]|\d+[.)])\s+/;
+const FENCE = /```([\w+#.-]*)[^\n]*\n([\s\S]*?)(?:```|$)/g;
 
 function Answer({ text }: { text: string }) {
+  const pieces: ReactNode[] = [];
+  let at = 0;
+  for (const match of text.matchAll(FENCE)) {
+    pieces.push(...prose(text.slice(at, match.index), pieces.length));
+    pieces.push(<CodeBlock key={`code-${pieces.length}`} language={match[1]} code={match[2].replace(/\n$/, "")} />);
+    at = match.index! + match[0].length;
+  }
+  pieces.push(...prose(text.slice(at), pieces.length));
+  return <>{pieces}</>;
+}
+
+function prose(text: string, offset: number): ReactNode[] {
   const groups: { list: boolean; numbered: boolean; lines: string[] }[] = [];
   for (const block of text.split(/\n\s*\n/)) {
     let current: (typeof groups)[number] | null = null;
@@ -328,19 +342,45 @@ function Answer({ text }: { text: string }) {
       current.lines.push(line);
     }
   }
-  return (
-    <>
-      {groups.map((group, i) => {
-        if (!group.list) return <p key={i}>{inline(group.lines.join(" "))}</p>;
-        const items = group.lines.map((line, j) => <li key={j}>{inline(line.replace(BULLET, ""))}</li>);
-        return group.numbered ? <ol key={i}>{items}</ol> : <ul key={i}>{items}</ul>;
-      })}
-    </>
-  );
+  return groups.map((group, i) => {
+    const key = `p-${offset}-${i}`;
+    if (!group.list) return <p key={key}>{inline(group.lines.join(" "))}</p>;
+    const items = group.lines.map((line, j) => <li key={j}>{inline(line.replace(BULLET, ""))}</li>);
+    return group.numbered ? <ol key={key}>{items}</ol> : <ul key={key}>{items}</ul>;
+  });
 }
 
 function inline(text: string): ReactNode[] {
-  return text.split(/(`[^`]+`)/).map((part, i) =>
-    part.startsWith("`") && part.endsWith("`") && part.length > 2 ? <code key={i}>{part.slice(1, -1)}</code> : part,
+  return text.split(/(`[^`]+`|\*\*[^*]+\*\*)/).map((part, i) => {
+    if (part.startsWith("`") && part.endsWith("`") && part.length > 2) return <code key={i}>{part.slice(1, -1)}</code>;
+    if (part.startsWith("**") && part.endsWith("**") && part.length > 4) return <strong key={i}>{part.slice(2, -2)}</strong>;
+    return part;
+  });
+}
+
+// A command or a piece of code, as the AI gave it, with its language and a button to copy it.
+function CodeBlock({ language, code }: { language: string; code: string }) {
+  const [copied, setCopied] = useState(false);
+  const copy = () =>
+    navigator.clipboard
+      ?.writeText(code)
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1600);
+      })
+      .catch(() => {});
+  const shell = /^(bash|sh|shell|zsh|console|powershell|ps1|cmd)$/i.test(language);
+  return (
+    <div className="qa__code">
+      <div className="qa__code-bar">
+        <span>{language ? (shell ? "Terminal" : language) : "Code"}</span>
+        <button type="button" onClick={copy} title="Copy">
+          {copied ? "Copied" : "Copy"}
+        </button>
+      </div>
+      <pre>
+        <code>{code}</code>
+      </pre>
+    </div>
   );
 }

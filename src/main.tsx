@@ -1,3 +1,5 @@
+// First, so settings saved under the old name are in place before anything reads them.
+import "./lib/renamedStorage";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 // The fonts ship with the page (Latin only), so the dashboard needs no font server: Manrope

@@ -62,7 +62,6 @@
   gap: 10px;
 }
 
-.summary__eyebrow,
 .summary__ai-label {
   font-size: 12px;
   font-weight: 650;
@@ -853,41 +852,6 @@
 }
 .kt__setup {
   gap: 12px;
-}
-.kt__progress {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 14px 18px;
-}
-.kt__progress-top {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  font-size: 14px;
-  font-weight: 600;
-}
-.kt__progress-top span:last-child {
-  font-variant-numeric: tabular-nums;
-  opacity: 0.75;
-}
-.kt__bar {
-  height: 8px;
-  border-radius: 999px;
-  background: var(--dd-line);
-  overflow: hidden;
-}
-.kt__bar i {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: var(--dd-accent);
-  transition: width 0.25s linear;
-}
-.kt__progress p {
-  margin: 0;
-  font-size: 12.5px;
-  opacity: 0.7;
 }
 
 /* The KT tab's choice: the brief KT or the detailed one, as two cards. */

@@ -29,7 +29,7 @@ type Mode = "functions" | "lines";
 // columns wrap almost every line.
 function savedLayout(): Layout {
   try {
-    return localStorage.getItem("devdash-diff-layout") === "split" ? "split" : "unified";
+    return localStorage.getItem("looma-diff-layout") === "split" ? "split" : "unified";
   } catch {
     return "unified";
   }
@@ -93,7 +93,7 @@ export default function FileChanges({ files, focus, version, scope, fileNote, lo
 
   useEffect(() => {
     try {
-      localStorage.setItem("devdash-diff-layout", layout);
+      localStorage.setItem("looma-diff-layout", layout);
     } catch {
       /* storage unavailable */
     }

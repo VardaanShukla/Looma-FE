@@ -3,7 +3,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 
-// The API from `devdash serve` runs on 8765; /api calls are forwarded there in dev.
+// The API from `looma serve` runs on 8765; /api calls are forwarded there in dev.
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {

@@ -48,7 +48,7 @@ function sectionFromHash(): SettingsSection {
 // Remembered per browser; a blocked storage just means the default each time.
 function savedTheme(): Theme {
   try {
-    const value = localStorage.getItem("devdash-theme");
+    const value = localStorage.getItem("looma-theme");
     if (value === "light" || value === "dark") return value;
   } catch {
     /* storage unavailable */
@@ -216,7 +216,7 @@ function Dashboard({ auth, shown, onSignOut, onAuthChange }: { auth: AuthStatus;
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     try {
-      localStorage.setItem("devdash-theme", theme);
+      localStorage.setItem("looma-theme", theme);
     } catch {
       /* storage unavailable */
     }
