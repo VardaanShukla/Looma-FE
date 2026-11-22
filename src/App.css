@@ -204,6 +204,8 @@
 }
 
 /* The view area: fills what's left under the status bar. */
+/* Each view fits the screen and scrolls inside itself where it can; one that is taller than
+   the screen (the Git steps, a long notice) scrolls the screen instead. */
 .screen {
   flex: 1;
   width: 100%;
@@ -211,6 +213,7 @@
   min-height: 0;
   margin: 0 auto;
   padding: 0 24px 20px;
+  overflow-y: auto;
   transition: opacity 150ms ease;
 }
 
@@ -227,6 +230,22 @@
   height: auto;
   max-width: 920px;
   margin: 24px auto 0;
+}
+
+/* Centred in the room there is; when it's taller, the auto margins go to 0 and the screen scrolls. */
+.screen:has(> .welcome) {
+  display: flex;
+  flex-direction: column;
+}
+
+.screen > .git {
+  height: auto;
+}
+
+.screen > .welcome {
+  width: 100%;
+  max-width: 1160px;
+  margin: auto;
 }
 
 /* Branch flow: the graph gets the room, the branch list sits beside it. */
@@ -356,67 +375,84 @@
   font-size: 13px;
 }
 
+/* First run: the steps and the button on the left, the AI to pick beside them. The step list
+   is a real sequence, so it keeps its numbers; proximity groups it, not boxes. */
 .welcome {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 16px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  grid-template-areas:
+    "intro   claude"
+    "steps   claude"
+    "actions claude";
+  grid-template-rows: auto auto 1fr;
+  gap: 0 48px;
   padding: 40px;
+}
+
+.welcome__intro {
+  grid-area: intro;
 }
 
 .welcome h1 {
   margin: 0;
   font-family: var(--dd-display);
-  font-size: 34px;
+  font-size: clamp(28px, 2.6vw, 36px);
   font-weight: 500;
   letter-spacing: -0.02em;
   line-height: 1.1;
+  text-wrap: balance;
 }
 
-.welcome > p {
-  margin: 0;
+.welcome__intro p {
+  max-width: 52ch;
+  margin: 12px 0 0;
   color: var(--dd-ink-soft);
+  line-height: 1.5;
 }
 
 .welcome__steps {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  width: 100%;
-  margin: 8px 0;
+  grid-area: steps;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin: 32px 0 0;
   padding: 0;
   list-style: none;
   counter-reset: step;
 }
 
 .welcome__steps li {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 16px;
-  border: 1px solid var(--dd-line);
-  border-radius: 14px;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 2px 14px;
   counter-increment: step;
   font-size: 13px;
+  line-height: 1.5;
   color: var(--dd-ink-soft);
 }
 
 .welcome__steps li::before {
   content: counter(step);
+  grid-row: span 2;
   display: grid;
   place-items: center;
-  width: 26px;
-  height: 26px;
-  margin-bottom: 6px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   background: var(--dd-accent-soft);
   color: var(--dd-accent);
+  font-size: 13px;
   font-weight: 700;
 }
 
 .welcome__steps strong {
+  align-self: center;
   color: var(--dd-ink);
-  font-size: 14px;
+  font-size: 15px;
+}
+
+.welcome__steps span:not(.welcome__optional) {
+  max-width: 56ch;
 }
 
 .welcome__optional {
@@ -430,20 +466,46 @@
 }
 
 .welcome__claude {
-  width: 100%;
-  max-width: 620px;
+  grid-area: claude;
+  min-width: 0;
+  padding-left: 48px;
+  border-left: 1px solid var(--dd-line);
+}
+
+.welcome__claude h2 {
+  margin: 0 0 14px;
+  font-size: 15px;
+  font-weight: 700;
 }
 
 .welcome__actions {
+  grid-area: actions;
+  align-self: start;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 10px 16px;
+  margin-top: 32px;
 }
 
 .welcome__skip {
   color: var(--dd-muted);
   font-size: 13px;
+}
+
+@media (max-width: 1040px) {
+  .welcome {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "intro" "steps" "claude" "actions";
+    grid-template-rows: none;
+  }
+
+  .welcome__claude {
+    margin-top: 32px;
+    padding: 28px 0 0;
+    border-top: 1px solid var(--dd-line);
+    border-left: 0;
+  }
 }
 
 /* Smaller screens can't fit a whole view, so the view scrolls under the bars. */
@@ -496,10 +558,6 @@
 
   .welcome {
     padding: 24px 16px;
-  }
-
-  .welcome__steps {
-    grid-template-columns: 1fr;
   }
 }
 

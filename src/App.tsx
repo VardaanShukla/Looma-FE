@@ -10,6 +10,7 @@ import FileChanges from "./components/FileChanges/FileChanges";
 import FlowGraph from "./components/FlowGraph/FlowGraph";
 import Help, { useSetup } from "./components/Help/Help";
 import Tour from "./components/Tour/Tour";
+import Git from "./components/Git/Git";
 import Home from "./components/Home/Home";
 import Loading from "./components/Loading/Loading";
 import Login from "./components/Login/Login";
@@ -680,6 +681,16 @@ function Dashboard({ auth, shown, onSignOut, onAuthChange }: { auth: AuthStatus;
         </Notice>
       );
     }
+    if (view === "git") {
+      return (
+        <Git
+          key={repoId}
+          repoId={repoId}
+          version={`${repoId}:${revision}`}
+          suggestMessage={() => watchSignIn(api.suggestCommitMessage(repoId))}
+        />
+      );
+    }
     if (branches && !branches.default_base && !base) return <BasePicker branches={branches} head={head} onPick={setBase} />;
     if (!comparison) return <Loading label="Reading your branch from git…" />;
 
@@ -907,7 +918,7 @@ function AskUncommitted({ onAnswer }: { onAnswer: (on: boolean) => void }) {
 // Screens about one project; the breadcrumb names the project before them.
 // Why a screen is off for a project that isn't a git repository.
 const NEEDS_GIT = "Needs git. This project isn't a git repository; run git init in its folder to turn this on.";
-const PROJECT_VIEWS = new Set<View>(["summary", "kt", "ask", "overview", "flow", "map", "changes", "commits", "help"]);
+const PROJECT_VIEWS = new Set<View>(["summary", "kt", "ask", "overview", "flow", "map", "changes", "commits", "git", "help"]);
 
 // Where you are: Home › project › screen › what's picked. Every step but the last goes back to
 // it. The arrow in front goes back to the previous screen, or, on a screen opened straight
@@ -1026,8 +1037,10 @@ function Welcome({ ai, onAiRefresh, onAdd, prefs, onPrefs }: {
   const ready = ai?.available && ai.signed_in !== false;
   return (
     <section className="card welcome">
-      <h1>See what changed in your code</h1>
-      <p>Looma turns your branches and commits into a page anyone can read. Two quick steps and you're in.</p>
+      <div className="welcome__intro">
+        <h1>See what changed in your code</h1>
+        <p>Looma turns your branches and commits into a page anyone can read. Two quick steps and you're in.</p>
+      </div>
       <ol className="welcome__steps">
         <li>
           <strong>Connect an AI {ready ? "✓" : <span className="welcome__optional">optional</span>}</strong>
@@ -1046,6 +1059,7 @@ function Welcome({ ai, onAiRefresh, onAdd, prefs, onPrefs }: {
         </li>
       </ol>
       <div className="welcome__claude">
+        <h2>Pick the AI that explains</h2>
         {prefs ? (
           <AiPicker prefs={prefs} onPrefs={onPrefs} onActiveChange={onAiRefresh} active={ai} />
         ) : (

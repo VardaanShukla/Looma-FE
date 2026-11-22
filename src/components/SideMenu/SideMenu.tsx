@@ -11,7 +11,7 @@ import "./SideMenu.css";
 // Settings opens like a folder: its parts (and AI's, one per AI) show under it while it's
 // on screen, and pick what Settings shows.
 
-export type View = "home" | "digest" | "summary" | "kt" | "ask" | "overview" | "flow" | "map" | "changes" | "commits" | "project" | "settings" | "help";
+export type View = "home" | "digest" | "summary" | "kt" | "ask" | "overview" | "flow" | "map" | "changes" | "commits" | "git" | "project" | "settings" | "help";
 
 // Screens marked inMenu: false are sections of Home; Home's links open their full screen.
 // The menu runs from tracking changes (git and AI) to understanding the project.
@@ -20,6 +20,7 @@ export const VIEWS: { id: View; label: string; hint: string; icon: ReactNode; in
   { id: "digest", label: "AI changes", hint: "What your AI coding tool changed each day, and what to check", icon: <DigestIcon /> },
   { id: "changes", label: "Changes", hint: "Every changed file and function, before and after", icon: <DiffIcon /> },
   { id: "commits", label: "Commits", hint: "Each saved step on this branch, and the project's open pull requests", icon: <CommitIcon /> },
+  { id: "git", label: "Git", hint: "Save your work, share it with your team, and manage branches, in plain words", icon: <GitIcon /> },
   { id: "overview", label: "This branch", hint: "The branch on screen at a glance", icon: <GaugeIcon /> },
   { id: "flow", label: "Branch flow", hint: "How branches split off and merge back", icon: <FlowIcon /> },
   { id: "map", label: "Project map", hint: "The parts of the project and what uses what", icon: <MapIcon /> },
@@ -79,8 +80,8 @@ export function settingsSectionLabel(id: SettingsSection): string {
 // while one of its screens is on show. Settings and Help sit apart, at the bottom.
 type Group = { id: string; label: string; hint: string; icon: ReactNode; views: View[] };
 const GROUPS: Group[] = [
-  { id: "code", label: "Code", hint: "Changes, commits, this branch and how branches flow", icon: <CodeIcon />,
-    views: ["changes", "commits", "overview", "flow"] },
+  { id: "code", label: "Code", hint: "Changes, commits, git steps, this branch and how branches flow", icon: <CodeIcon />,
+    views: ["changes", "commits", "git", "overview", "flow"] },
   { id: "understand", label: "Understand", hint: "The project's summary, map, KT guide and questions about it", icon: <BookIcon />,
     views: ["summary", "map", "kt", "ask"] },
 ];
@@ -389,6 +390,17 @@ function GaugeIcon() {
       <path d="M4.5 17a8.5 8.5 0 1 1 15 0" />
       <path d="M12 13l4-4" />
       <circle cx="12" cy="13" r="1.2" />
+    </svg>
+  );
+}
+
+function GitIcon() {
+  return (
+    <svg {...iconProps}>
+      <circle cx="6" cy="5" r="2" />
+      <circle cx="6" cy="19" r="2" />
+      <circle cx="18" cy="9" r="2" />
+      <path d="M6 7v10M18 11a6 6 0 0 1-6 6H8" />
     </svg>
   );
 }

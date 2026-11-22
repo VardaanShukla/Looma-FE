@@ -659,3 +659,61 @@ export type KtGuide = {
   functions: { name: string; path: string; what: string; use: string; signature: string | null }[];
   images: { path: string; caption: string }[];
 };
+
+// The Git screen: what git sees, and the result of one step.
+export type GitFile = {
+  path: string;
+  old_path: string | null;
+  // How it changed in the next commit; null when nothing of it is added.
+  staged: "added" | "modified" | "deleted" | "renamed" | "copied" | null;
+  // How it changed since, not added yet; "new" for a file git doesn't track.
+  unstaged: "added" | "modified" | "deleted" | "renamed" | "copied" | "new" | null;
+  conflict: boolean;
+};
+export type GitStash = { sha: string; index: number; message: string; at: string };
+export type GitBranch = { name: string; current: boolean; upstream: string | null; gone: boolean; unmerged: number };
+export type GitStatus = {
+  branch: string | null;
+  head: string | null;
+  base: string | null;
+  remote: string | null;
+  // The remote's address (without any login in it), and this branch's page on GitHub once it's there.
+  remote_url: string | null;
+  branch_url: string | null;
+  upstream: string | null;
+  ahead: number;
+  behind: number;
+  pushed: boolean;
+  midway: "merge" | "rebase" | "cherry-pick" | "revert" | null;
+  conflicts: string[];
+  files: GitFile[];
+  stashes: GitStash[];
+  branches: GitBranch[];
+  remote_branches: string[];
+  last: { id: number; action: string; summary: string; at: string; undoable: boolean; why_not: string | null } | null;
+};
+export type GitAction =
+  | "branch-create" | "switch" | "branch-rename" | "branch-delete" | "stage" | "unstage" | "commit" | "amend"
+  | "update" | "stash" | "stash-apply" | "stash-pop" | "stash-drop" | "push" | "pull" | "abort" | "continue" | "undo";
+export type GitRequest = {
+  name?: string;
+  new_name?: string;
+  start?: "current" | "base";
+  force?: boolean;
+  remote?: boolean;
+  paths?: string[];
+  message?: string;
+  how?: "merge" | "rebase";
+  base?: string;
+  sha?: string;
+};
+export type GitResult = {
+  commands: string[];
+  summary: string;
+  notes: string[];
+  done: boolean;
+  message: string;
+  conflicts: string[];
+  // Where to see it on GitHub, only once the remote was asked and has it.
+  url: string | null;
+};
