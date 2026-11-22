@@ -1,7 +1,9 @@
 /* Always dark, whatever the dashboard's theme: near black with cream, peach and rose light.
    --split (0 to 1) is how far the sign-in panel has slid in, set from the animation each
-   frame. The times below (in ms) match the story in Splash.tsx. */
+   frame. The times below (in ms) match the story in Splash.tsx, and --pace (set from PACE
+   there) slows them all alike. */
 .splash {
+  --pace: 1.45;
   --split: 0;
   --lean-x: 0;
   --lean-y: 0;
@@ -55,18 +57,18 @@
 .splash__rise {
   position: absolute;
   inset: 0;
-  animation: splash-rise 760ms cubic-bezier(0.16, 1, 0.3, 1) 3550ms both;
+  animation: splash-rise calc(760ms * var(--pace)) cubic-bezier(0.16, 1, 0.3, 1) calc(3550ms * var(--pace)) both;
 }
 
 .splash__slot .tile__body rect {
-  animation: splash-round 760ms cubic-bezier(0.16, 1, 0.3, 1) 3550ms both;
+  animation: splash-round calc(760ms * var(--pace)) cubic-bezier(0.16, 1, 0.3, 1) calc(3550ms * var(--pace)) both;
 }
 
 /* Then it sways a little, as if hung in the air. */
 .splash__sway {
   position: absolute;
   inset: 0;
-  animation: splash-sway 8s ease-in-out 4400ms infinite;
+  animation: splash-sway 8s ease-in-out calc(4400ms * var(--pace)) infinite;
 }
 
 .splash__sway .tile {
@@ -80,16 +82,16 @@
 /* The planes unfold out of the seam where the slash of light lands; the code tag draws
    itself last. */
 .splash__slot .tile__stand {
-  animation: splash-stand 820ms cubic-bezier(0.16, 1, 0.3, 1) 3800ms both;
+  animation: splash-stand calc(820ms * var(--pace)) cubic-bezier(0.16, 1, 0.3, 1) calc(3800ms * var(--pace)) both;
 }
 
 .splash__slot .tile__flat {
-  animation: splash-flat 820ms cubic-bezier(0.16, 1, 0.3, 1) 3800ms both;
+  animation: splash-flat calc(820ms * var(--pace)) cubic-bezier(0.16, 1, 0.3, 1) calc(3800ms * var(--pace)) both;
 }
 
 .splash__slot .tile__seam {
   opacity: 0;
-  animation: splash-seam 1000ms ease-out 3860ms both;
+  animation: splash-seam calc(1000ms * var(--pace)) ease-out calc(3860ms * var(--pace)) both;
   filter: drop-shadow(0 0 6px rgba(255, 190, 160, 0.9));
 }
 
@@ -97,20 +99,20 @@
   stroke-dasharray: 1;
   stroke-dashoffset: 1;
   opacity: 0;
-  animation: splash-code 650ms cubic-bezier(0.45, 0, 0.25, 1) forwards;
+  animation: splash-code calc(650ms * var(--pace)) cubic-bezier(0.45, 0, 0.25, 1) forwards;
   filter: drop-shadow(0 0 8px rgba(255, 140, 110, 0.8));
 }
 
 .splash__slot .tile__code path:nth-child(1) {
-  animation-delay: 4350ms;
+  animation-delay: calc(4350ms * var(--pace));
 }
 
 .splash__slot .tile__code path:nth-child(2) {
-  animation-delay: 4480ms;
+  animation-delay: calc(4480ms * var(--pace));
 }
 
 .splash__slot .tile__code path:nth-child(3) {
-  animation-delay: 4610ms;
+  animation-delay: calc(4610ms * var(--pace));
 }
 
 /* The L drawn in light: both strokes lie along the slash at first, pivoting on the corner
@@ -119,7 +121,7 @@
 .splash__slot .tile--light .tile__flat {
   transform-box: view-box;
   transform-origin: 204px 754px;
-  animation-duration: 950ms;
+  animation-duration: calc(950ms * var(--pace));
 }
 
 .splash__slot .tile--light .tile__stand {
@@ -133,7 +135,7 @@
 .splash__slot .tile__spark {
   transform-box: fill-box;
   transform-origin: center;
-  animation: splash-spark 1100ms ease-out 3780ms both;
+  animation: splash-spark calc(1100ms * var(--pace)) ease-out calc(3780ms * var(--pace)) both;
 }
 
 /* The name and the line under it, centred below the floor light. */
@@ -154,22 +156,37 @@
 .splash__name {
   display: flex;
   margin: 0;
-  padding-left: 0.4em;
+  padding-left: 0.24em;
   font-family: var(--dd-display);
-  font-size: calc(var(--tile) * 0.155);
+  font-size: calc(var(--tile) * 0.22);
   font-weight: 600;
-  letter-spacing: 0.4em;
+  letter-spacing: 0.24em;
   line-height: 1;
 }
 
-/* Each letter is lit in turn, hot and out of focus first, then settling into white. */
+/* Each letter decodes in turn: hidden, then flickering through code characters in orange
+   (Splash.tsx swaps them, data-s="1"), then locked and lit, hot and out of focus first and
+   settling into white (data-s="2"). */
 .splash__letter {
   display: inline-block;
+  min-width: 0.78em;
   color: var(--splash-ink);
+  text-align: center;
   text-shadow: 0 0 calc(var(--tile) * 0.1) rgba(255, 110, 90, 0.4);
   opacity: 0;
-  animation: splash-light 900ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  animation-delay: calc(4500ms + var(--i) * 80ms);
+}
+
+.splash__letter[data-s="1"] {
+  opacity: 0.85;
+  color: #ff8a3d;
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  font-weight: 500;
+  text-shadow: 0 0 calc(var(--tile) * 0.12) rgba(255, 122, 26, 0.85);
+  transform: translateY(0.04em) scale(0.92);
+}
+
+.splash__letter[data-s="2"] {
+  animation: splash-lock 700ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .splash__tagline {
@@ -184,7 +201,7 @@
   text-wrap: balance;
   white-space: normal;
   opacity: 0;
-  animation: splash-fade-up 800ms cubic-bezier(0.16, 1, 0.3, 1) 4800ms forwards;
+  animation: splash-fade-up calc(800ms * var(--pace)) cubic-bezier(0.16, 1, 0.3, 1) calc(5100ms * var(--pace)) forwards;
 }
 
 /* Skipped: everything in place at once. */
@@ -229,7 +246,7 @@
   font-size: 12.5px;
   color: rgba(255, 226, 210, 0.5);
   opacity: 0;
-  animation: splash-fade 600ms ease 5300ms forwards;
+  animation: splash-fade 600ms ease 1200ms forwards;
 }
 
 .splash--holding .splash__hint,
@@ -420,24 +437,24 @@
   }
 }
 
-@keyframes splash-light {
+/* A letter locking in: a flash of orange light that grows out of it, then settles to white. */
+@keyframes splash-lock {
   0% {
-    opacity: 0;
-    color: #ff7a5a;
-    filter: blur(10px);
-    transform: translateY(0.12em);
-    text-shadow: 0 0 calc(var(--tile) * 0.2) rgba(255, 110, 90, 0.9);
-  }
-  45% {
     opacity: 1;
-    color: #ffc4a8;
-    filter: blur(1px);
+    color: #fff4e8;
+    transform: scale(1.18);
+    filter: blur(2px);
+    text-shadow: 0 0 calc(var(--tile) * 0.3) rgba(255, 122, 26, 1), 0 0 calc(var(--tile) * 0.08) #fff;
+  }
+  40% {
+    color: #ffd0a8;
+    filter: none;
   }
   100% {
     opacity: 1;
     color: var(--splash-ink);
-    filter: none;
     transform: none;
+    filter: none;
     text-shadow: 0 0 calc(var(--tile) * 0.1) rgba(255, 110, 90, 0.4);
   }
 }
@@ -501,6 +518,7 @@
   .splash__slot .tile__code path,
   .splash__slot .tile__spark,
   .splash__letter,
+  .splash__letter[data-s],
   .splash__tagline,
   .splash__hint,
   .splash--exit .splash__rise,

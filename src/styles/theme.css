@@ -39,6 +39,7 @@
   --dd-shadow: 0 12px 32px -20px rgba(24, 24, 27, 0.22), 0 1px 2px rgba(24, 24, 27, 0.05);
   /* The thin scroll bar thumb, shown only while the pointer is over what scrolls. */
   --dd-scroll: rgba(63, 63, 70, 0.3);
+  --dd-scroll-hot: rgba(194, 65, 12, 0.55);
   /* What dims the page behind a dialog. */
   --dd-scrim: rgba(24, 24, 27, 0.4);
   /* Depth. Raised parts are lit from above: a bright top edge (bevel) and a shadow that
@@ -109,7 +110,8 @@
   --dd-panel-hot: rgba(255, 106, 0, 0.13);
   --dd-panel-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03), 0 1px 2px rgba(0, 0, 0, 0.5);
   --dd-shadow: 0 16px 36px -22px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.03);
-  --dd-scroll: rgba(255, 255, 255, 0.18);
+  --dd-scroll: rgba(255, 122, 26, 0.32);
+  --dd-scroll-hot: rgba(255, 122, 26, 0.7);
   --dd-scrim: rgba(0, 0, 0, 0.6);
   --dd-bevel: inset 0 1px 0 rgba(255, 255, 255, 0.04);
   --dd-raise: 0 1px 2px rgba(0, 0, 0, 0.5), 0 12px 28px -18px rgba(0, 0, 0, 0.8);
@@ -143,22 +145,13 @@
   box-sizing: border-box;
 }
 
-/* Scroll bars everywhere: no track, just a thin faint thumb that appears while the pointer
-   is over the area that scrolls, so a scrolling panel never shows a wide empty bar. */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: transparent transparent;
-}
-
-*:hover,
-*:focus-within {
-  scrollbar-color: var(--dd-scroll) transparent;
-}
-
-/* Browsers without scrollbar-color (older Safari) use these instead. */
+/* Scroll bars everywhere: no track and nothing showing until the pointer is over the area
+   that scrolls; then a slim pill of the accent, brighter under the pointer. Chromium and
+   Safari draw it from the ::-webkit-scrollbar parts (setting scrollbar-color there would
+   switch those off), Firefox from scrollbar-color. */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 10px;
+  height: 10px;
 }
 
 ::-webkit-scrollbar-track,
@@ -166,13 +159,38 @@
   background: transparent;
 }
 
+/* The transparent border keeps the pill thin and off the edge. */
 ::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
   border-radius: 999px;
   background: transparent;
+  background-clip: padding-box;
 }
 
-*:hover::-webkit-scrollbar-thumb {
-  background: var(--dd-scroll);
+*:hover::-webkit-scrollbar-thumb,
+*:focus-within::-webkit-scrollbar-thumb {
+  background-color: var(--dd-scroll);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  border-width: 2px;
+  background-color: var(--dd-scroll-hot);
+}
+
+::-webkit-scrollbar-thumb:active {
+  background-color: var(--dd-accent);
+}
+
+@supports not selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+  }
+
+  *:hover,
+  *:focus-within {
+    scrollbar-color: var(--dd-scroll) transparent;
+  }
 }
 
 html,

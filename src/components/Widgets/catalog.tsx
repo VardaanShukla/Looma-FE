@@ -580,7 +580,7 @@ function Branches({ data, title, o }: WidgetProps) {
   const branches = o("merged") ? data.branches : data.branches.filter((b) => !(b.merged || b.gone) || b.name === shown);
   return (
     <>
-      <Head title={title} aside={data.branches.length > 0 && String(branches.length)} />
+      <Head title={title} aside={data.branches.length > 0 && String(branches.length)} link={{ label: "Git", go: () => data.onView("git") }} />
       {data.branches.length === 0 ? (
         <Muted>Reading the branches…</Muted>
       ) : (

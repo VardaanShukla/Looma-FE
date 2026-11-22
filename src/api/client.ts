@@ -27,6 +27,10 @@ import type {
   GitHubStatus,
   PullRequests,
   FunctionDetail,
+  GitAction,
+  GitRequest,
+  GitResult,
+  GitStatus,
   FileExplanation,
   FunctionExplanation,
   KnowledgeTransfer,
@@ -109,6 +113,13 @@ export const api = {
   sync: (repoId: number) => request<Sync>(`/api/repos/${repoId}/sync`, "POST", {}),
   state: (repoId: number, uncommitted: boolean) =>
     get<{ signature: string }>(`/api/repos/${repoId}/state?uncommitted=${uncommitted}`).then((r) => r.signature),
+  git: (repoId: number) => get<GitStatus>(`/api/repos/${repoId}/git`),
+  // preview: only the commands it would run, and what they do; nothing runs.
+  gitAction: (repoId: number, action: GitAction, body: GitRequest = {}, preview = false) =>
+    request<GitResult>(`/api/repos/${repoId}/git/${action}`, "POST", { ...body, preview }),
+  // A commit message for what's added, from the AI picked in Settings.
+  suggestCommitMessage: (repoId: number) =>
+    request<{ message: string }>(`/api/repos/${repoId}/git/suggest-message`, "POST", {}).then((r) => r.message),
   flow: (repoId: number) => get<Flow>(`/api/repos/${repoId}/flow`),
   map: (repoId: number, head: string) =>
     get<ProjectMap>(`/api/repos/${repoId}/map?${new URLSearchParams({ head })}`),

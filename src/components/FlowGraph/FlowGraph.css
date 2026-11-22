@@ -86,7 +86,6 @@
   position: relative;
   overflow-x: auto;
   padding: 0 0 6px;
-  scrollbar-width: thin;
   /* Fade the edges so a long history reads as continuing. */
   mask-image: linear-gradient(90deg, transparent 0, #000 24px, #000 calc(100% - 12px), transparent 100%);
 }

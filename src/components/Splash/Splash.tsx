@@ -1,94 +1,107 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
-import { LightTile, SEAM } from "./LoomaTile";
+import { LightTile } from "./LoomaTile";
 import "./Splash.css";
 
-// A warp-speed reveal, timed and coloured from a reference video. Black, then a warm glow
-// swells at one point and the screen floods with cream and peach light, soft rays pouring
-// into a pinch at the middle in a bow-tie that leans up and to the right, like light falling
-// into a black hole, with points of light streaming in along them. The light
-// reddens from the corners through rose to crimson as the speed climbs, the rays pull in
-// along the lean of the bow-tie, and everything drains to black around one white-hot slash.
-// The slash settles, a faint reflection appears on the floor under it, and a glass tile
-// pops into place around it with a beam of light above and sparks adrift. The slash lands
-// on the tile's seam and splits into the two strokes of an "L" drawn in the same light,
-// swinging apart from the corner; the code tag draws itself last, then the name lights up
-// under the tile.
+// A developer lost in their own code, and then the thought of Looma. Black, then fragments
+// of code fade in all around: a merge conflict, a stack trace, "who wrote this?", drifting
+// and glitching. In the middle a thought types itself, "what is this code even doing?",
+// stops, erases, and types "looma." in orange instead. The noise stills; the word and then
+// every fragment break into points of light that pour inward along curving lines into one
+// spark, which swells as they arrive. The tile rises out of the spark with a beam above it
+// and light on the floor; thin lines grow out from it to a ring of nodes with signals
+// running along them, sparks drift, and the name lights up letter by letter.
 //
 // Leaving, the splash fades to the dashboard underneath.
 //
 // When this browser has to sign in, the sign-in panel slides in from the right and the tile
 // moves into the left half. Click or press any key to skip ahead.
 
-// Milliseconds from the start. The CSS holds the same times for the tile and the name.
-const COLLAPSE = [2450, 3130]; // the rays pull in and the light drains to black
-const SLASH_IN = [2250, 3030]; // the slash swells
-const SLASH_SETTLE = [3030, 3600]; // it eases to the size of the tile
+// Milliseconds from the start at normal speed. The CSS holds the same times for the tile and
+// the name; both run PACE times slower than written, so the story has room to breathe.
+const PACE = 1.45;
+const NOISE_IN = [0, 700]; // the fragments fade in
+const ASK = [380, 1350]; // the first thought types itself
+const STILL = [1600, 1950]; // the noise slows and stops
+const ERASE = [1650, 1900]; // the first thought is erased
+const IDEA = [1980, 2280]; // "looma." types itself
+const POUR = [2380, 3450]; // the fragments break into light and pour into the spark
+const SPARK = [2380, 3650]; // the spark swells as the light arrives
 const FLOOR = [3450, 3700]; // the reflection on the floor
 const BEAM = [3550, 4300]; // the tile pops in (CSS) and the beam above it shines
-const SEAM_AT = [3550, 4100]; // the slash travels to the logo's seam
-const MELT = [3780, 4400]; // the slash splits into the two strokes of the L
+const NETWORK = [3700, 4600]; // the lines grow out to the nodes
 const MOTES = [3800, 4700]; // the sparks drift in
-const READY_AT = 4900; // the name is in: wait here for signing in, if needed
+const NAME_AT = 4380; // the first letter starts decoding
+const LETTER_STEP = 170; // the next letter starts this much later
+const DECODE_MS = 420; // how long a letter flickers through code before it locks
 const LINGER_MS = 650; // how long it stays when there's no signing in
 const SPLIT_MS = 750; // the sign-in panel slides in or out
 // Milliseconds from the start of the exit, once the panel is out: the splash fades to the
 // dashboard underneath.
 const EXIT_MS = 700;
 const NAME = "LOOMA";
-// The slash's lean, up to the right: the same as the seam of the logo (radians).
-const AXIS = -0.653;
+// The name is in, every letter locked: wait here for signing in, if needed. Worked out from
+// the name's timing so a pause for signing in can never catch a letter mid-decode.
+const READY_AT = NAME_AT + (NAME.length - 1) * LETTER_STEP + DECODE_MS + 60;
+const QUESTION = "what is this code even doing?";
+const ANSWER = "looma.";
 
-// The colour of the flood over time, measured from the reference: at the middle, a little
-// out from it, and out at the edges. Black, a brown glow, cream and peach, rose, crimson,
-// then black again.
-type Rgb = [number, number, number];
-const FLOOD: [number, Rgb, Rgb, Rgb][] = [
-  [0, [6, 4, 7], [6, 4, 7], [6, 4, 7]],
-  [100, [30, 15, 13], [24, 13, 11], [26, 12, 13]],
-  [200, [107, 60, 41], [72, 36, 28], [72, 36, 28]],
-  [330, [214, 167, 105], [183, 121, 78], [172, 104, 74]],
-  [400, [236, 191, 131], [213, 164, 104], [198, 131, 90]],
-  [500, [239, 201, 139], [229, 183, 123], [205, 141, 94]],
-  [1000, [238, 201, 141], [225, 184, 125], [195, 126, 85]],
-  [1400, [240, 208, 157], [231, 193, 136], [186, 112, 82]],
-  [1800, [241, 215, 170], [229, 191, 134], [165, 85, 72]],
-  [2000, [244, 219, 178], [231, 190, 136], [154, 66, 67]],
-  [2230, [244, 224, 190], [216, 162, 113], [121, 43, 50]],
-  [2430, [247, 225, 192], [191, 108, 82], [94, 30, 41]],
-  [2630, [248, 230, 198], [157, 64, 55], [75, 22, 35]],
-  [2830, [254, 243, 230], [149, 53, 60], [68, 19, 33]],
-  [2930, [254, 247, 239], [128, 45, 53], [53, 17, 28]],
-  [3030, [254, 249, 243], [97, 35, 43], [21, 9, 14]],
-  [3130, [254, 243, 234], [6, 4, 7], [6, 4, 7]],
+// What a confused afternoon looks like. Lines with a problem in them glow red.
+const FRAGMENTS = [
+  "<<<<<<< HEAD",
+  ">>>>>>> feature/login",
+  "CONFLICT (content): Merge conflict in cart.py",
+  "TypeError: Cannot read properties of null",
+  "Traceback (most recent call last):",
+  "- return total(items)",
+  "+ return total(items, off) or 0",
+  "// TODO: why does this work??",
+  "# don't touch this",
+  "who wrote this?",
+  "git rebase --continue",
+  "HEAD detached at 4be1e02",
+  "fix fix final FINAL v2",
+  "useEffect(() => { load() }, [])",
+  "if (user && !user.id) return",
+  "await fetch(url).then((r) => r.json())",
+  "def apply_discount(cart, code):",
+  "SELECT * FROM orders WHERE paid = 0",
+  "14 files changed, 892 insertions(+)",
+  "catch (e) { /* ignore */ }",
+  "x = x + 1  # ???",
+  "const tmp2 = data.filter(Boolean)",
+  "self.cache[key] = None",
+  "npm WARN deprecated",
+  "[skip ci] wip",
+  "export default function App()",
+  "undefined is not a function",
+  "git log --oneline | head",
+  "return null; // for now",
+  "merge branch 'dev' into dev",
 ];
+const TROUBLE = /error|conflict|traceback|<<<<|>>>>|undefined|warn|^- /i;
+const GLYPHS = "{}[]()<>=;:+-*/#$%&_|01?!";
+// Moments the whole screen glitches at once, building as the confusion does (story ms).
+const BURSTS = [560, 980, 1260, 1460, 1580];
+const BURST_MS = 110;
 
 type Phase = "intro" | "ready" | "holding" | "exit";
 
-// A ray of light: a soft wedge out of the pinch at the middle, with an angle, a width, and
-// where along its run it sits.
-type Ray = { a: number; axis: number; da: number; r0: number; v: number; len: number; half: number; b: number; hue: number; phase: number };
+// A fragment of code adrift, placed as a fraction of the screen.
+type Fragment = { text: string; fx: number; fy: number; depth: number; vx: number; vy: number; glitch: boolean; trouble: boolean; width: number; leaves: number };
+// A point of light that leaves a fragment (or the thought) and pours into the spark along a
+// curve: where along the text it starts, when it leaves, how long it takes, and how far the
+// curve bows out.
+type Grain = { from: number; u: number; dy: number; at: number; dur: number; bow: number; size: number };
 type Mote = { a: number; r: number; size: number; phase: number; drift: number };
-// A point of light falling toward the middle along a ray.
-type Fall = { axis: number; da: number; r0: number; v: number; size: number };
+// A node in the ring around the tile, with where its line leaves the tile.
+type Hub = { a: number; r: number; phase: number; speed: number };
 
 const clamp01 = (k: number) => Math.min(1, Math.max(0, k));
 const span = (t: number, [from, to]: number[]) => clamp01((t - from) / (to - from));
 const easeOutCubic = (k: number) => 1 - (1 - k) ** 3;
+const easeInCubic = (k: number) => k ** 3;
 const easeInOutCubic = (k: number) => (k < 0.5 ? 4 * k * k * k : 1 - (-2 * k + 2) ** 3 / 2);
 const mix = (a: number, b: number, k: number) => a + (b - a) * k;
-const gauss = () => (Math.random() + Math.random() + Math.random() - 1.5) * 1.6;
-const wrap = (angle: number) => ((((angle + Math.PI) % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2)) - Math.PI;
-const rgb = (c: number[], a = 1) => `rgba(${Math.round(c[0])}, ${Math.round(c[1])}, ${Math.round(c[2])}, ${a})`;
-
-// The flood's three colours at story time `t`.
-function floodAt(t: number): [Rgb, Rgb, Rgb] {
-  let i = 0;
-  while (i < FLOOD.length - 2 && t > FLOOD[i + 1][0]) i++;
-  const [t0, ...from] = FLOOD[i];
-  const [t1, ...to] = FLOOD[i + 1];
-  const k = clamp01((t - t0) / (t1 - t0));
-  return [0, 1, 2].map((n) => [0, 1, 2].map((c) => mix(from[n][c], to[n][c], k))) as [Rgb, Rgb, Rgb];
-}
 
 type Props = {
   // Whether to wait for signing in once the name is in: null while not known yet (it
@@ -115,6 +128,7 @@ export default function Splash({ hold, panel, onDone }: Props) {
   if (panel) kept.current = panel;
 
   useEffect(() => {
+    rootRef.current!.style.setProperty("--pace", String(PACE));
     const canvas = canvasRef.current!;
     const ctx = canvas.getContext("2d")!;
     const root = rootRef.current!;
@@ -168,18 +182,14 @@ export default function Splash({ hold, panel, onDone }: Props) {
 
     let width = 0;
     let height = 0;
-    let rays: Ray[] = [];
-    let darkRays: Ray[] = [];
+    let fragments: Fragment[] = [];
+    let grains: Grain[] = [];
     let motes: Mote[] = [];
-    let falling: Fall[] = [];
-    // The rays are drawn at a third of the size and scaled up, which is what makes them soft;
-    // the beam is drawn smaller still.
-    const lightRays = document.createElement("canvas");
-    const lightCtx = lightRays.getContext("2d")!;
-    const shadeRays = document.createElement("canvas");
-    const shadeCtx = shadeRays.getContext("2d")!;
-    const column = document.createElement("canvas");
-    const columnCtx = column.getContext("2d")!;
+    let nodes: Hub[] = [];
+    // Fragment -1 is the thought in the middle.
+    const THOUGHT = -1;
+    const beamCanvas = document.createElement("canvas");
+    const beamCtx = beamCanvas.getContext("2d")!;
     // Film grain: a tile of noise, laid over the picture at a new offset every frame.
     const grain = document.createElement("canvas");
     grain.width = grain.height = 160;
@@ -196,27 +206,18 @@ export default function Splash({ hold, panel, onDone }: Props) {
       g.putImageData(data, 0, 0);
     }
     const grainPattern = ctx.createPattern(grain, "repeat");
-    const makeRay = (): Ray => {
-      // Most rays run along the bow-tie's axis, in both directions, so the flood has the
-      // slash's lean in it before it collapses to the slash.
-      const along = Math.random() < 0.64;
-      const a = along ? AXIS + (Math.random() < 0.5 ? 0 : Math.PI) + gauss() * 0.4 : Math.random() * Math.PI * 2;
-      const d1 = wrap(a - AXIS);
-      const d2 = wrap(a - AXIS - Math.PI);
-      const near = Math.abs(d1) < Math.abs(d2);
-      return {
-        a,
-        axis: near ? AXIS : AXIS + Math.PI,
-        da: near ? d1 : d2,
-        r0: Math.random() * 0.4,
-        v: 0.3 + Math.random(),
-        len: 0.3 + Math.random() * 0.65,
-        half: 0.004 + Math.random() ** 2 * 0.05,
-        b: 0.35 + Math.random() * 0.65,
-        hue: Math.random(),
-        phase: Math.random() * Math.PI * 2,
-      };
+
+    const codeFont = (size: number) => `500 ${size.toFixed(1)}px ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace`;
+    const fragmentSize = (f: Fragment) => (width < 640 ? 9.5 : 11) + f.depth * (width < 640 ? 4 : 6);
+    const thoughtSize = () => Math.max(17, Math.min(26, width * 0.018));
+    // Text widths change once the fonts load, so they're measured again then.
+    const measure = () => {
+      for (const f of fragments) {
+        ctx.font = codeFont(fragmentSize(f));
+        f.width = ctx.measureText(f.text).width;
+      }
     };
+
     const resize = () => {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       width = window.innerWidth;
@@ -224,16 +225,56 @@ export default function Splash({ hold, panel, onDone }: Props) {
       canvas.width = Math.round(width * dpr);
       canvas.height = Math.round(height * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      lightRays.width = shadeRays.width = Math.max(1, Math.round(width / 3));
-      lightRays.height = shadeRays.height = Math.max(1, Math.round(height / 3));
-      column.width = Math.max(1, Math.round(width / 4));
-      column.height = Math.max(1, Math.round(height / 4));
-      falling = Array.from({ length: 240 }, () => {
-        const r = makeRay();
-        return { axis: r.axis, da: r.da, r0: Math.random(), v: 0.4 + Math.random() * 1.1, size: 0.8 + Math.random() * 1.4 };
+      beamCanvas.width = Math.max(1, Math.round(width / 4));
+      beamCanvas.height = Math.max(1, Math.round(height / 4));
+      // Fewer fragments on a small screen, and none over the thought in the middle.
+      const count = width < 640 ? 16 : width < 1100 ? 24 : FRAGMENTS.length;
+      fragments = [];
+      // Placed one by one where they don't cover each other or the thought, with room for
+      // their drift.
+      const taken: { x: number; y: number; w: number }[] = [];
+      for (const text of FRAGMENTS.slice(0, count)) {
+        const depth = Math.random();
+        const w = text.length * ((width < 640 ? 9.5 : 11) + depth * (width < 640 ? 4 : 6)) * 0.62;
+        let fx = 0;
+        let fy = 0;
+        for (let tries = 0; tries < 80; tries++) {
+          fx = 0.03 + Math.random() * Math.max(0.05, 0.94 - w / width);
+          fy = 0.06 + Math.random() * 0.88;
+          const x = fx * width;
+          const y = fy * height;
+          const overThought = Math.abs(x + w / 2 - width / 2) < w / 2 + Math.min(260, width * 0.3) && Math.abs(y - height / 2) < 60;
+          const overOther = taken.some((o) => x < o.x + o.w + 28 && o.x < x + w + 28 && Math.abs(y - o.y) < 26);
+          if (!overThought && !overOther) break;
+        }
+        taken.push({ x: fx * width, y: fy * height, w });
+        fragments.push({
+          text,
+          fx,
+          fy,
+          depth,
+          vx: (Math.random() - 0.5) * 0.008 * (0.4 + depth),
+          vy: (Math.random() - 0.5) * 0.004 * (0.4 + depth),
+          glitch: Math.random() < 0.6,
+          trouble: TROUBLE.test(text),
+          width: 0,
+          // Far fragments go first, so the light seems to come from everywhere at once.
+          leaves: POUR[0] + 120 + (1 - depth) * 380 + Math.random() * 260,
+        });
+      }
+      measure();
+      grains = [];
+      // The thought goes first, straight into the spark.
+      for (let i = 0; i < 46; i++) {
+        grains.push({ from: THOUGHT, u: Math.random(), dy: (Math.random() - 0.5) * 18, at: POUR[0] + Math.random() * 120, dur: 380 + Math.random() * 220, bow: (Math.random() - 0.5) * 0.4, size: 0.9 + Math.random() * 1.2 });
+      }
+      fragments.forEach((f, from) => {
+        const n = Math.min(20, Math.ceil(f.text.length * 0.55));
+        for (let i = 0; i < n; i++) {
+          // Every curve bows the same way, so the light swirls in like water down a drain.
+          grains.push({ from, u: Math.random(), dy: (Math.random() - 0.5) * 8, at: f.leaves + Math.random() * 200, dur: 700 + Math.random() * 450, bow: 0.38 + Math.random() * 0.34, size: 0.7 + Math.random() * 0.9 + f.depth * 0.5 });
+        }
       });
-      rays = Array.from({ length: 560 }, makeRay);
-      darkRays = Array.from({ length: 300 }, makeRay);
       motes = Array.from({ length: 70 }, () => ({
         a: Math.random() * Math.PI * 2,
         r: 0.5 + Math.random() * 1.1,
@@ -241,226 +282,268 @@ export default function Splash({ hold, panel, onDone }: Props) {
         phase: Math.random() * Math.PI * 2,
         drift: (Math.random() - 0.5) * 0.0001,
       }));
+      const hubs = width < 640 ? 9 : 14;
+      nodes = Array.from({ length: hubs }, (_, i) => ({
+        a: (i / hubs) * Math.PI * 2 + (Math.random() - 0.5) * 0.35,
+        r: 1.05 + Math.random() * 0.75,
+        phase: Math.random(),
+        speed: 0.00035 + Math.random() * 0.0004,
+      }));
     };
     resize();
     window.addEventListener("resize", resize);
+    document.fonts?.ready.then(() => !finished && measure());
 
-    // The tile's slot on screen (it doesn't move while the tile inside it pops in), the
-    // point the rays come from, and where the logo's seam falls.
+    // The tile's slot on screen (it doesn't move while the tile inside it pops in).
     const geometry = () => {
       const box = slotRef.current?.getBoundingClientRect();
       const size = box?.width || 200;
       const left = box ? box.left : width / 2 - size / 2;
       const top = box ? box.top : height / 2 - size / 2;
-      return {
-        size,
-        left,
-        top,
-        cx: left + size / 2,
-        cy: top + size / 2,
-        bottom: top + size,
-        seamX: left + SEAM.x * size,
-        seamY: top + SEAM.y * size,
-      };
+      return { size, left, top, cx: left + size / 2, cy: top + size / 2, bottom: top + size };
     };
 
-    // A round bloom of warm white light.
+    // A round bloom of warm light.
     const bloom = (x: number, y: number, radius: number, strength: number) => {
       if (strength <= 0 || radius <= 0) return;
       const glow = ctx.createRadialGradient(x, y, 0, x, y, radius);
       glow.addColorStop(0, `rgba(255, 247, 238, ${0.95 * strength})`);
-      glow.addColorStop(0.14, `rgba(255, 176, 140, ${0.55 * strength})`);
-      glow.addColorStop(0.45, `rgba(214, 72, 72, ${0.2 * strength})`);
-      glow.addColorStop(1, "rgba(214, 72, 72, 0)");
+      glow.addColorStop(0.14, `rgba(255, 176, 120, ${0.55 * strength})`);
+      glow.addColorStop(0.45, `rgba(232, 89, 12, ${0.2 * strength})`);
+      glow.addColorStop(1, "rgba(232, 89, 12, 0)");
       ctx.fillStyle = glow;
       ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
     };
 
-    // One ray as a soft wedge on a small canvas: wide at the far end, fading in and out
-    // along its run.
-    const wedge = (target: CanvasRenderingContext2D, q: number, cx: number, cy: number, angle: number, r1: number, r2: number, half: number, color: Rgb, alpha: number) => {
-      if (alpha < 0.004 || r2 <= r1) return;
-      const dx = Math.cos(angle);
-      const dy = Math.sin(angle);
-      const w1 = r1 * Math.tan(half) + 0.4;
-      const w2 = r2 * Math.tan(half) + 0.4;
-      const x1 = cx * q + dx * r1 * q;
-      const y1 = cy * q + dy * r1 * q;
-      const x2 = cx * q + dx * r2 * q;
-      const y2 = cy * q + dy * r2 * q;
-      const grad = target.createLinearGradient(x1, y1, x2, y2);
-      // Bright at the end nearest the middle, where the light is heading.
-      grad.addColorStop(0, rgb(color, alpha * 0.7));
-      grad.addColorStop(0.14, rgb(color, alpha));
-      grad.addColorStop(0.6, rgb(color, alpha * 0.45));
-      grad.addColorStop(1, rgb(color, 0));
-      target.fillStyle = grad;
-      target.beginPath();
-      target.moveTo(x1 - dy * w1 * q, y1 + dx * w1 * q);
-      target.lineTo(x2 - dy * w2 * q, y2 + dx * w2 * q);
-      target.lineTo(x2 + dy * w2 * q, y2 - dx * w2 * q);
-      target.lineTo(x1 + dy * w1 * q, y1 - dx * w1 * q);
-      target.closePath();
-      target.fill();
+    // Where a fragment sits at time `t`: it drifts, and slows to a stop as the noise stills.
+    const driftClock = (t: number) => (t < STILL[0] ? t : STILL[0] + (STILL[1] - STILL[0]) * 0.5 * easeOutCubic(span(t, STILL)));
+    const fragmentAt = (f: Fragment, t: number) => {
+      const c = driftClock(t);
+      return { x: f.fx * width + f.vx * c, y: f.fy * height + f.vy * c };
     };
 
-    // Points of light falling in toward the middle along the rays, quickening and brightening
-    // as they go, until the pinch swallows them.
-    const fall = (t: number, cx: number, cy: number, rmax: number, speed: number, strength: number) => {
+    // The thought in the middle: typed, erased, typed again, with a caret.
+    const thought = (t: number, cx: number, cy: number) => {
+      let text = "";
+      let idea = false;
+      if (t >= IDEA[0]) {
+        idea = true;
+        // The newest letter flickers through code for a moment before it settles.
+        const typed = span(t, IDEA) * ANSWER.length;
+        const whole = Math.floor(typed);
+        text = ANSWER.slice(0, whole);
+        if (whole < ANSWER.length && typed - whole > 0.15) text += GLYPHS[Math.floor(Math.random() * GLYPHS.length)];
+      } else if (t >= ERASE[0]) {
+        text = QUESTION.slice(0, Math.round((1 - span(t, ERASE)) * QUESTION.length));
+      } else {
+        text = QUESTION.slice(0, Math.round(span(t, ASK) * QUESTION.length));
+      }
+      // The answer breaks into light as the pour begins.
+      const gone = easeInCubic(span(t, [POUR[0], POUR[0] + 260]));
+      const strength = span(t, [ASK[0] - 200, ASK[0]]) * (1 - gone);
       if (strength <= 0) return;
+      const size = thoughtSize();
+      ctx.font = idea ? `600 ${size * 1.9}px Unbounded, Manrope, sans-serif` : `500 ${size}px Manrope, system-ui, sans-serif`;
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      // Laid out as if the whole line were there, so typing doesn't shift it.
+      const full = ctx.measureText(idea ? ANSWER : QUESTION).width;
+      const x = cx - full / 2;
+      ctx.globalCompositeOperation = "source-over";
+      if (idea) {
+        ctx.shadowColor = `rgba(255, 122, 26, ${0.8 * strength})`;
+        ctx.shadowBlur = 34;
+        ctx.fillStyle = `rgba(255, 150, 80, ${strength})`;
+      } else {
+        ctx.fillStyle = `rgba(245, 238, 230, ${0.92 * strength})`;
+      }
+      ctx.fillText(text, x, cy);
+      ctx.shadowBlur = 0;
+      // The caret blinks while nothing is being typed.
+      const typing = (t > ASK[0] && t < ASK[1]) || (t > ERASE[0] && t < ERASE[1]) || (t > IDEA[0] && t < IDEA[1]);
+      if (t < POUR[0] && (typing || Math.floor(t / 420) % 2 === 0)) {
+        const caretX = x + ctx.measureText(text).width + 3;
+        ctx.fillStyle = idea ? `rgba(255, 150, 80, ${strength})` : `rgba(245, 238, 230, ${0.8 * strength})`;
+        const tall = idea ? size * 1.9 : size;
+        ctx.fillRect(caretX, cy - tall * 0.62, idea ? 3 : 2, tall * 1.24);
+      }
+      return full;
+    };
+
+    // The fragments of code, drifting, glitching, and fading as their light leaves them.
+    // How hard the screen is glitching at `t`: a burst, 0 to 1, or nothing.
+    const burstAt = (t: number) => {
+      for (const at of BURSTS) if (t >= at && t < at + BURST_MS) return 1 - (t - at) / BURST_MS;
+      return 0;
+    };
+    const scramble = (text: string, rate: number) =>
+      [...text].map((c) => (c !== " " && Math.random() < rate ? GLYPHS[Math.floor(Math.random() * GLYPHS.length)] : c)).join("");
+
+    const noise = (t: number) => {
+      const shown = easeOutCubic(span(t, NOISE_IN));
+      if (shown <= 0) return;
+      // The confusion builds until the thought arrives, then the noise stills.
+      const restless = (0.55 + 0.65 * span(t, [200, 1500])) * (1 - span(t, STILL));
+      const burst = burstAt(t) * (1 - span(t, STILL));
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      for (const f of fragments) {
+        const left = 1 - easeInOutCubic(span(t, [f.leaves, f.leaves + 360]));
+        if (left <= 0) continue;
+        const { x, y } = fragmentAt(f, t);
+        const size = fragmentSize(f);
+        ctx.font = codeFont(size);
+        let text = f.text;
+        let jx = 0;
+        let split = 0;
+        const wild = f.glitch && restless > 0;
+        // Now and then a line blinks out.
+        if (wild && Math.random() < 0.025 * restless) continue;
+        if ((wild && Math.random() < 0.55) || burst > 0) {
+          text = scramble(f.text, 0.14 * restless + 0.3 * burst);
+          jx = (Math.random() - 0.5) * (4 * restless + 26 * burst);
+          // A slip sideways with the colour coming apart.
+          if (Math.random() < 0.05 * restless + 0.6 * burst) split = 2 + Math.random() * (3 + 5 * burst);
+        }
+        // Near fragments are brighter; the light leaving makes them flare before they go.
+        const flare = 1 + 1.4 * span(t, [f.leaves - 120, f.leaves + 80]) * left;
+        const alpha = (0.16 + f.depth * 0.36) * shown * left * Math.min(flare, 1.8) * (1 + burst * 0.6);
+        if (split > 0) {
+          ctx.globalCompositeOperation = "lighter";
+          ctx.fillStyle = `rgba(255, 40, 60, ${alpha * 0.8})`;
+          ctx.fillText(text, x + jx - split, y);
+          ctx.fillStyle = `rgba(40, 200, 255, ${alpha * 0.6})`;
+          ctx.fillText(text, x + jx + split, y);
+        }
+        ctx.globalCompositeOperation = "source-over";
+        ctx.fillStyle = f.trouble ? `rgba(248, 113, 113, ${alpha})` : `rgba(236, 226, 214, ${alpha})`;
+        ctx.fillText(text, x + jx, y);
+      }
+      // In a burst, bands of the picture tear sideways.
+      if (burst > 0) {
+        const dpr = canvas.width / width;
+        ctx.save();
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        for (let i = 0; i < 5; i++) {
+          const band = (4 + Math.random() * 22) * dpr;
+          const top = Math.random() * (canvas.height - band);
+          const shift = (Math.random() - 0.5) * 60 * dpr * burst;
+          ctx.drawImage(canvas, 0, top, canvas.width, band, shift, top, canvas.width, band);
+        }
+        ctx.restore();
+      }
+    };
+
+    // The points of light pouring into the spark, each along its own curve, quickening as it
+    // goes, with a short tail behind it.
+    const pour = (t: number, cx: number, cy: number, thoughtWidth: number) => {
+      if (t < POUR[0] || t > POUR[1] + 200) return 0;
       ctx.globalCompositeOperation = "lighter";
       ctx.lineCap = "round";
-      for (const f of falling) {
-        const frac = (((f.r0 - f.v * warpPos * 0.5) % 1) + 1) % 1;
-        const r = frac ** 1.5 * rmax;
-        const angle = f.axis + f.da * (1 - 0.94 * easeInOutCubic(span(t, COLLAPSE)));
-        const dx = Math.cos(angle);
-        const dy = Math.sin(angle);
-        const tail = 6 + 60 * f.v * speed * (1 - frac);
-        const alpha = strength * (0.18 + 0.82 * (1 - frac) ** 1.4);
-        ctx.strokeStyle = `rgba(255, 240, 220, ${alpha})`;
-        ctx.lineWidth = f.size * (0.6 + 0.8 * (1 - frac));
-        ctx.beginPath();
-        ctx.moveTo(cx + dx * r, cy + dy * r);
-        ctx.lineTo(cx + dx * (r + tail), cy + dy * (r + tail));
-        ctx.stroke();
-      }
-    };
-
-    // The flood and the rays across it, at story time `t`.
-    let time = 0;
-    let warpPos = 0;
-    const warp = (t: number, dt: number, cx: number, cy: number) => {
-      if (t >= COLLAPSE[1]) return;
-      const diag = Math.hypot(width, height);
-      const [inner, mid, edge] = floodAt(t);
-      // The wash: opaque, in the three measured colours.
-      const wash = ctx.createRadialGradient(cx, cy, 0, cx, cy, diag * 0.62);
-      wash.addColorStop(0, rgb(inner));
-      wash.addColorStop(0.14, rgb(mid));
-      wash.addColorStop(0.36, rgb(edge));
-      wash.addColorStop(1, rgb(edge));
-      ctx.globalCompositeOperation = "source-over";
-      ctx.fillStyle = wash;
-      ctx.fillRect(0, 0, width, height);
-      if (t < 280) return;
-
-      const pull = easeInOutCubic(span(t, COLLAPSE));
-      const gain = (0.35 + 0.65 * span(t, [1200, 2900])) * span(t, [280, 520]) * (1 - span(t, [2900, 3130]));
-      const deepen = span(t, [1500, 2700]);
-      warpPos += (dt / 1000) * (0.3 + 0.7 * span(t, [300, 1200])) * (1 - pull * 0.9);
-      const q = lightRays.width / width;
-      const rmax = diag * 0.62;
-      lightCtx.globalCompositeOperation = "source-over";
-      lightCtx.clearRect(0, 0, lightRays.width, lightRays.height);
-      shadeCtx.clearRect(0, 0, shadeRays.width, shadeRays.height);
-      lightCtx.globalCompositeOperation = "lighter";
-
-      const place = (ray: Ray) => {
-        // As the light drains, each ray swings in toward the axis and stretches along it.
-        const angle = ray.axis + ray.da * (1 - 0.94 * pull);
-        // The rays slide in toward the pinch and come round again at the far end.
-        const start = ((((ray.r0 - ray.v * warpPos * 0.12) % 0.42) + 0.42) % 0.42) * rmax;
-        const run = ray.len * rmax * (1 + 1.5 * pull);
-        const flicker = 0.8 + 0.2 * Math.sin(time * 0.0018 * ray.v + ray.phase);
-        const onAxis = Math.exp(-((ray.da / 0.45) ** 2));
-        const offAxis = 1 - pull * Math.min(1, Math.abs(ray.da) * 2.4);
-        return { angle, start, run, half: ray.half * (1 - 0.65 * pull), strength: flicker * (1 + 1.4 * onAxis) * offAxis };
-      };
-      for (const ray of darkRays) {
-        const p = place(ray);
-        wedge(shadeCtx, q, cx, cy, p.angle, p.start, p.start + p.run, p.half * 1.6, [92, 24, 40], 0.3 * ray.b * span(t, [1500, 2300]) * p.strength * (1 - span(t, [2900, 3130])));
-      }
-      for (const ray of rays) {
-        const p = place(ray);
-        // Cream at first, then peach and rose as the light deepens.
-        const k = ray.hue * deepen;
-        const color: Rgb = [255, mix(240, 170, k), mix(212, 138, k)];
-        wedge(lightCtx, q, cx, cy, p.angle, p.start, p.start + p.run, p.half, color, 0.16 * gain * ray.b * p.strength * (1 - 0.7 * pull));
-      }
-      ctx.imageSmoothingEnabled = true;
-      ctx.globalCompositeOperation = "source-over";
-      ctx.drawImage(shadeRays, 0, 0, width, height);
-      ctx.globalCompositeOperation = "lighter";
-      ctx.drawImage(lightRays, 0, 0, width, height);
-
-      fall(t, cx, cy, rmax, 0.4 + 0.6 * span(t, [300, 1500]), span(t, [500, 1000]) * (1 - span(t, [2800, 3130])));
-      // The pinch the rays pour into, and glitter around it.
-      bloom(cx, cy, 70 + 220 * span(t, [300, 900]), 0.5 * gain * (1 - span(t, [2750, 3130])));
-      if (t > 900 && t < 2950) {
-        const env = easeInOutCubic(span(t, [900, 1400])) * (1 - span(t, [2650, 2950]));
-        for (let i = 0; i < 90; i++) {
-          const r = Math.random() ** 2 * Math.min(width, height) * 0.15;
-          const a = Math.random() * Math.PI * 2;
-          ctx.fillStyle = `rgba(255, 246, 236, ${(0.25 + Math.random() * 0.6) * env})`;
-          ctx.fillRect(cx + Math.cos(a) * r, cy + Math.sin(a) * r, 1.6, 1.6);
+      let arrived = 0;
+      for (const g of grains) {
+        const k = span(t, [g.at, g.at + g.dur]);
+        if (k >= 1) {
+          arrived++;
+          continue;
         }
+        if (k <= 0) continue;
+        let sx: number;
+        let sy: number;
+        if (g.from === THOUGHT) {
+          sx = cx - thoughtWidth / 2 + g.u * thoughtWidth;
+          sy = cy + g.dy;
+        } else {
+          const f = fragments[g.from];
+          const at = fragmentAt(f, g.at);
+          sx = at.x + g.u * f.width;
+          sy = at.y + g.dy;
+        }
+        const dx = cx - sx;
+        const dy = cy - sy;
+        // The curve's bend: off to one side of the straight line in.
+        const bx = (sx + cx) / 2 - dy * g.bow;
+        const by = (sy + cy) / 2 + dx * g.bow;
+        const point = (p: number) => {
+          const q = 1 - p;
+          return { x: q * q * sx + 2 * q * p * bx + p * p * cx, y: q * q * sy + 2 * q * p * by + p * p * cy };
+        };
+        const p = easeInOutCubic(k);
+        const tail = Math.max(0, p - 0.025 - 0.09 * Math.sin(Math.PI * k));
+        const head = point(p);
+        const back = point(tail);
+        const mid = point((p + tail) / 2);
+        const alpha = Math.sin(Math.PI * Math.min(1, k * 1.05)) ** 0.6;
+        const color = `${Math.round(mix(236, 150, k))}, ${Math.round(mix(220, 70, k))}`;
+        const line = ctx.createLinearGradient(back.x, back.y, head.x, head.y);
+        line.addColorStop(0, `rgba(255, ${color}, 0)`);
+        line.addColorStop(1, `rgba(255, ${color}, ${alpha})`);
+        ctx.strokeStyle = line;
+        ctx.lineWidth = g.size;
+        ctx.beginPath();
+        ctx.moveTo(back.x, back.y);
+        ctx.quadraticCurveTo(mid.x, mid.y, head.x, head.y);
+        ctx.stroke();
+        ctx.fillStyle = `rgba(255, 240, 225, ${alpha})`;
+        ctx.fillRect(head.x - g.size * 0.6, head.y - g.size * 0.6, g.size * 1.2, g.size * 1.2);
       }
+      return arrived / grains.length;
     };
 
-    // The slash of light, centred on (x, y) and leaning along AXIS: long thin tails like a
-    // cinema lens flare, a salmon glow, and a white-hot spindle at its heart.
-    const slash = (x: number, y: number, core: number, tail: number, strength: number) => {
+    // The soft beam above the tile, wide at its foot and narrowing as it climbs.
+    const beam = (x: number, top: number, base: number, size: number, strength: number) => {
       if (strength <= 0) return;
-      ctx.save();
-      ctx.translate(x, y);
-      ctx.rotate(AXIS);
+      const w = beamCanvas.width;
+      const h = beamCanvas.height;
+      const q = w / width;
+      beamCtx.globalCompositeOperation = "source-over";
+      beamCtx.clearRect(0, 0, w, h);
+      const foot = size * 0.6 * q;
+      const tip = size * 0.1 * q;
+      const body = beamCtx.createLinearGradient(x * q - foot, 0, x * q + foot, 0);
+      body.addColorStop(0, "rgba(255, 122, 26, 0)");
+      body.addColorStop(0.4, "rgba(255, 150, 90, 0.22)");
+      body.addColorStop(0.5, "rgba(255, 220, 190, 0.5)");
+      body.addColorStop(0.6, "rgba(255, 150, 90, 0.22)");
+      body.addColorStop(1, "rgba(255, 122, 26, 0)");
+      beamCtx.fillStyle = body;
+      beamCtx.beginPath();
+      beamCtx.moveTo(x * q - tip, 0);
+      beamCtx.lineTo(x * q + tip, 0);
+      beamCtx.lineTo(x * q + foot, base * q);
+      beamCtx.lineTo(x * q - foot, base * q);
+      beamCtx.closePath();
+      beamCtx.fill();
+      beamCtx.globalCompositeOperation = "destination-in";
+      const fade = beamCtx.createLinearGradient(0, 0, 0, base * q);
+      const peak = clamp01(top / base);
+      fade.addColorStop(0, "rgba(0, 0, 0, 0)");
+      fade.addColorStop(peak * 0.7, "rgba(0, 0, 0, 0.55)");
+      fade.addColorStop(peak, "rgba(0, 0, 0, 1)");
+      fade.addColorStop(1, "rgba(0, 0, 0, 0)");
+      beamCtx.fillStyle = fade;
+      beamCtx.fillRect(0, 0, w, h);
       ctx.globalCompositeOperation = "lighter";
-      for (const [lineWidth, alpha] of [[16, 0.08], [5, 0.28], [1.6, 0.8]]) {
-        const line = ctx.createLinearGradient(-tail, 0, tail, 0);
-        line.addColorStop(0, "rgba(255, 130, 110, 0)");
-        line.addColorStop(0.5, `rgba(255, 170, 150, ${alpha * strength})`);
-        line.addColorStop(1, "rgba(255, 130, 110, 0)");
-        ctx.strokeStyle = line;
-        ctx.lineWidth = lineWidth;
-        ctx.lineCap = "round";
-        ctx.beginPath();
-        ctx.moveTo(-tail, 0);
-        ctx.lineTo(tail, 0);
-        ctx.stroke();
-      }
-      // The glow, a wide ellipse squashed along the axis.
-      ctx.save();
-      ctx.scale(1, 0.24);
-      const glow = ctx.createRadialGradient(0, 0, 0, 0, 0, core * 1.7);
-      glow.addColorStop(0, `rgba(255, 120, 108, ${0.5 * strength})`);
-      glow.addColorStop(0.5, `rgba(214, 62, 72, ${0.2 * strength})`);
-      glow.addColorStop(1, "rgba(214, 62, 72, 0)");
-      ctx.fillStyle = glow;
-      ctx.fillRect(-core * 1.7, -core * 1.7, core * 3.4, core * 3.4);
-      ctx.restore();
-      // The spindle.
-      const half = core;
-      const thick = core * 0.22;
-      const body = ctx.createLinearGradient(-half, 0, half, 0);
-      body.addColorStop(0, "rgba(255, 150, 130, 0)");
-      body.addColorStop(0.3, `rgba(255, 214, 196, ${0.85 * strength})`);
-      body.addColorStop(0.5, `rgba(255, 250, 244, ${strength})`);
-      body.addColorStop(0.7, `rgba(255, 214, 196, ${0.85 * strength})`);
-      body.addColorStop(1, "rgba(255, 150, 130, 0)");
-      ctx.fillStyle = body;
-      ctx.beginPath();
-      ctx.moveTo(-half, 0);
-      ctx.quadraticCurveTo(0, -thick, half, 0);
-      ctx.quadraticCurveTo(0, thick, -half, 0);
-      ctx.fill();
-      ctx.restore();
-      bloom(x, y, core * 0.42, 0.7 * strength);
+      ctx.globalAlpha = strength;
+      ctx.imageSmoothingEnabled = true;
+      ctx.drawImage(beamCanvas, 0, 0, width, height);
+      ctx.globalAlpha = 1;
     };
 
     // The reflection on the floor under the tile: a thin glowing line, with a wider haze.
     const floorLight = (cx: number, y: number, size: number, strength: number) => {
       if (strength <= 0) return;
       ctx.save();
+      ctx.globalCompositeOperation = "lighter";
       ctx.translate(cx, y);
       for (const [ry, alpha] of [[0.14, 0.12], [0.04, 0.5]]) {
         ctx.save();
         ctx.scale(1, ry);
         const r = size * 1.05;
         const g = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
-        g.addColorStop(0, `rgba(255, 190, 170, ${alpha * strength})`);
-        g.addColorStop(0.45, `rgba(240, 100, 100, ${alpha * 0.5 * strength})`);
-        g.addColorStop(1, "rgba(214, 62, 72, 0)");
+        g.addColorStop(0, `rgba(255, 200, 160, ${alpha * strength})`);
+        g.addColorStop(0.45, `rgba(255, 122, 26, ${alpha * 0.5 * strength})`);
+        g.addColorStop(1, "rgba(232, 89, 12, 0)");
         ctx.fillStyle = g;
         ctx.fillRect(-r, -r, r * 2, r * 2);
         ctx.restore();
@@ -468,98 +551,109 @@ export default function Splash({ hold, panel, onDone }: Props) {
       ctx.restore();
     };
 
-    // The soft beam above the tile, wide at its foot and narrowing as it climbs, leaning a
-    // little to the right.
-    const beam = (x: number, top: number, base: number, size: number, strength: number) => {
+    // The AI lines: from the tile's edge out to a ring of nodes, drawn outward as they grow,
+    // with signals running out along them and back.
+    const network = (cx: number, cy: number, size: number, grow: number, strength: number) => {
       if (strength <= 0) return;
-      const w = column.width;
-      const h = column.height;
-      const q = w / width;
-      const shift = base * 0.1 * q;
-      columnCtx.globalCompositeOperation = "source-over";
-      columnCtx.clearRect(0, 0, w, h);
-      const foot = size * 0.6 * q;
-      const tip = size * 0.1 * q;
-      const body = columnCtx.createLinearGradient(x * q - foot, 0, x * q + foot, 0);
-      body.addColorStop(0, "rgba(255, 120, 100, 0)");
-      body.addColorStop(0.4, "rgba(255, 150, 120, 0.24)");
-      body.addColorStop(0.5, "rgba(255, 214, 192, 0.5)");
-      body.addColorStop(0.6, "rgba(255, 150, 120, 0.24)");
-      body.addColorStop(1, "rgba(255, 120, 100, 0)");
-      columnCtx.fillStyle = body;
-      columnCtx.beginPath();
-      columnCtx.moveTo(x * q - tip + shift, 0);
-      columnCtx.lineTo(x * q + tip + shift, 0);
-      columnCtx.lineTo(x * q + foot, base * q);
-      columnCtx.lineTo(x * q - foot, base * q);
-      columnCtx.closePath();
-      columnCtx.fill();
-      columnCtx.globalCompositeOperation = "destination-in";
-      const fade = columnCtx.createLinearGradient(0, 0, 0, base * q);
-      const peak = clamp01(top / base);
-      fade.addColorStop(0, "rgba(0, 0, 0, 0)");
-      fade.addColorStop(peak * 0.7, "rgba(0, 0, 0, 0.55)");
-      fade.addColorStop(peak, "rgba(0, 0, 0, 1)");
-      fade.addColorStop(1, "rgba(0, 0, 0, 0)");
-      columnCtx.fillStyle = fade;
-      columnCtx.fillRect(0, 0, w, h);
-      ctx.globalAlpha = strength;
-      ctx.imageSmoothingEnabled = true;
-      ctx.drawImage(column, 0, 0, width, height);
-      ctx.globalAlpha = 1;
+      ctx.globalCompositeOperation = "lighter";
+      ctx.lineCap = "round";
+      const spread = width < 640 ? 0.85 : 1;
+      const placed = nodes.map((n) => {
+        const sway = Math.sin(time * 0.0006 + n.phase * 6) * 0.03;
+        const a = n.a + sway - lean.x * 0.04;
+        return { n, a, x: cx + Math.cos(a) * n.r * size * 1.25 * spread, y: cy + Math.sin(a) * n.r * size * 0.95 * spread };
+      });
+      placed.forEach(({ n, a, x, y }, i) => {
+        // From just outside the tile.
+        const sx = cx + Math.cos(a) * size * 0.62;
+        const sy = cy + Math.sin(a) * size * 0.62;
+        const reach = easeOutCubic(clamp01(grow * 1.6 - n.phase * 0.6));
+        if (reach <= 0) return;
+        const ex = mix(sx, x, reach);
+        const ey = mix(sy, y, reach);
+        const line = ctx.createLinearGradient(sx, sy, ex, ey);
+        line.addColorStop(0, `rgba(255, 150, 90, ${0.32 * strength})`);
+        line.addColorStop(1, `rgba(255, 150, 90, ${0.1 * strength})`);
+        ctx.strokeStyle = line;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(sx, sy);
+        ctx.lineTo(ex, ey);
+        ctx.stroke();
+        // A few neighbours are linked too, like a net.
+        const next = placed[(i + 1) % placed.length];
+        if (reach >= 1 && i % 2 === 0) {
+          ctx.strokeStyle = `rgba(255, 150, 90, ${0.07 * strength})`;
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.lineTo(next.x, next.y);
+          ctx.stroke();
+        }
+        if (reach < 1) return;
+        // The node, and a signal running out and back.
+        ctx.fillStyle = `rgba(255, 200, 160, ${0.7 * strength})`;
+        ctx.beginPath();
+        ctx.arc(x, y, 1.8, 0, Math.PI * 2);
+        ctx.fill();
+        const run = (time * n.speed + n.phase) % 1;
+        const p = run < 0.5 ? run * 2 : 2 - run * 2;
+        const glow = Math.sin(Math.PI * p);
+        ctx.fillStyle = `rgba(255, 236, 214, ${0.85 * strength * glow})`;
+        ctx.beginPath();
+        ctx.arc(mix(sx, x, p), mix(sy, y, p), 1.6, 0, Math.PI * 2);
+        ctx.fill();
+      });
     };
 
     // Sparks adrift around the tile, twinkling.
     const adrift = (cx: number, cy: number, size: number, strength: number) => {
       if (strength <= 0) return;
+      ctx.globalCompositeOperation = "lighter";
       for (const mote of motes) {
         const a = mote.a + time * mote.drift;
         const x = cx + Math.cos(a) * mote.r * size * 1.3 - lean.x * 10 * mote.size;
         const y = cy + Math.sin(a) * mote.r * size * 0.95 - Math.sin(time * 0.0004 + mote.phase) * 6;
         const twinkle = 0.45 + 0.55 * Math.sin(time * 0.0022 + mote.phase * 3);
-        ctx.fillStyle = `rgba(255, 222, 208, ${strength * twinkle * 0.6})`;
+        ctx.fillStyle = `rgba(255, 214, 180, ${strength * twinkle * 0.6})`;
         ctx.beginPath();
         ctx.arc(x, y, mote.size, 0, Math.PI * 2);
         ctx.fill();
       }
     };
 
-    // The whole picture at story time `t`, `out` milliseconds into the exit (or -1), after
-    // `dt` milliseconds more.
-    const draw = (t: number, out: number, dt: number) => {
+    // The whole picture at story time `t`, `out` milliseconds into the exit (or -1).
+    let time = 0;
+    const draw = (t: number, out: number) => {
       const m = geometry();
-      ctx.clearRect(0, 0, width, height);
       ctx.globalCompositeOperation = "source-over";
+      ctx.fillStyle = "#050302";
+      ctx.fillRect(0, 0, width, height);
 
       if (out < 0) {
-        warp(t, dt, m.cx, m.cy);
-        ctx.globalCompositeOperation = "lighter";
-
-        // The slash: it swells, settles to the size of the tile, travels to the logo's seam
-        // and gives way to the logo.
-        const swell = easeOutCubic(span(t, SLASH_IN));
-        const settle = easeInOutCubic(span(t, SLASH_SETTLE));
-        const melt = 1 - easeInOutCubic(span(t, MELT)) * 0.95;
-        const strength = swell * (1 - settle * 0.4) * melt;
-        const core = mix(width * 0.17, m.size * 0.82, settle) * (0.3 + 0.7 * swell);
-        const tail = mix(width * 0.7, m.size * 1.7, easeInOutCubic(span(t, [3030, 3700]))) * swell;
-        const travel = easeInOutCubic(span(t, SEAM_AT));
-        slash(mix(m.cx, m.seamX, travel), mix(m.cy, m.seamY, travel), core, tail, strength);
-        // The blaze as the light drains into the slash.
-        const blaze = span(t, [2700, 3030]) * (1 - span(t, [3030, 3300]));
-        bloom(m.cx, m.cy, Math.min(width, height) * 0.3, 0.45 * blaze);
-
+        noise(t);
+        const thoughtWidth = thought(t, m.cx, m.cy) ?? 0;
+        // Before the pour the thought's width isn't drawn any more; keep the last one.
+        if (thoughtWidth) lastThought = thoughtWidth;
+        const arrived = pour(t, m.cx, m.cy, lastThought);
+        // The spark: a pinpoint as the answer breaks up, swelling as the light arrives, then
+        // flaring as the tile rises out of it and settling into the glow behind the tile.
+        const swell = t >= POUR[1] + 200 ? 1 : arrived;
+        const spark = span(t, [SPARK[0], SPARK[0] + 200]) * (0.35 + 0.65 * swell);
+        const flare = span(t, [3350, 3600]) * (1 - easeInOutCubic(span(t, [3600, 4400])));
+        bloom(m.cx, m.cy, 18 + m.size * 0.9 * swell + m.size * 0.6 * flare, Math.max(0, spark * (1 - span(t, [3600, 4000]) * 0.7) + flare * 0.6));
         floorLight(m.cx, m.bottom + m.size * 0.38, m.size, easeOutCubic(span(t, FLOOR)));
         // The beam is brightest as the tile pops in and has all but gone by the time it rests.
         const beamK = easeOutCubic(span(t, BEAM)) * (1 - 0.85 * easeInOutCubic(span(t, [4300, 5200])));
         beam(m.cx, m.top - m.size * 0.5, m.cy, m.size, 0.9 * beamK);
+        network(m.cx, m.cy, m.size, span(t, NETWORK), easeOutCubic(span(t, [NETWORK[0], NETWORK[0] + 400])));
         adrift(m.cx, m.cy, m.size, easeOutCubic(span(t, MOTES)));
       } else {
-        // Leaving: the floor light and the sparks fade out with the rest.
-        floorLight(m.cx, m.bottom + m.size * 0.38, m.size, 1 - easeInOutCubic(span(out, [0, 500])));
+        // Leaving: the light around the tile fades out with the rest.
+        const fade = 1 - easeInOutCubic(span(out, [0, 500]));
+        floorLight(m.cx, m.bottom + m.size * 0.38, m.size, fade);
+        network(m.cx, m.cy, m.size, 1, fade);
         adrift(m.cx, m.cy, m.size, 1 - easeInOutCubic(span(out, [0, 400])));
       }
-
 
       // The grain, faint, over everything.
       if (grainPattern) {
@@ -573,7 +667,20 @@ export default function Splash({ hold, panel, onDone }: Props) {
         ctx.globalAlpha = 1;
       }
       ctx.globalCompositeOperation = "source-over";
-      return { m };
+    };
+    let lastThought = 0;
+
+    // The name: each letter flickers through code characters, then locks into place and
+    // lights up (the CSS does the light). Driven from the story, so skipping lands on it whole.
+    const letters = [...root.querySelectorAll<HTMLElement>(".splash__letter")];
+    const spell = (t: number) => {
+      letters.forEach((el, i) => {
+        const start = NAME_AT + i * LETTER_STEP;
+        const state = t < start ? "0" : t < start + DECODE_MS ? "1" : "2";
+        if (el.dataset.s !== state) el.dataset.s = state;
+        const shown = state === "1" ? GLYPHS[Math.floor(Math.random() * GLYPHS.length)] : NAME[i];
+        if (el.textContent !== shown) el.textContent = shown;
+      });
     };
 
     const cleanup = () => {
@@ -590,7 +697,10 @@ export default function Splash({ hold, panel, onDone }: Props) {
       // No motion: the tile in place with its floor light, the panel simply there until
       // signed in, then a quick fade.
       time = 6000;
-      const still = () => draw(READY_AT + 2000, -1, 0);
+      const still = () => {
+        draw(READY_AT + 2000, -1);
+        spell(READY_AT + 2000);
+      };
       timers.push(window.setTimeout(still, 30));
       window.addEventListener("resize", still);
       const check = () => {
@@ -635,7 +745,7 @@ export default function Splash({ hold, panel, onDone }: Props) {
         setSplit(wantSplit > split ? Math.min(1, split + dt / SPLIT_MS) : Math.max(0, split - dt / SPLIT_MS));
       }
       // The story waits at READY_AT until it's known whether to sign in, and while signing in.
-      if (story < READY_AT || hold === false) story += dt;
+      if (story < READY_AT || hold === false) story += dt / PACE;
       if (exitAt < 0 && hold === false && story >= READY_AT + (split > 0 ? 0 : LINGER_MS)) exitAt = now;
       // The tile goes once the panel is out of the way.
       if (exitAt >= 0 && leaveAt < 0 && split === 0) {
@@ -645,7 +755,8 @@ export default function Splash({ hold, panel, onDone }: Props) {
       if (exitAt < 0) moveTo(story < READY_AT ? "intro" : split === 1 ? "holding" : "ready");
 
       const out = leaveAt >= 0 ? now - leaveAt : -1;
-      draw(Math.min(story, READY_AT + 4000), out, dt);
+      draw(Math.min(story, READY_AT + 4000), out);
+      if (out < 0) spell(story);
       if (out >= EXIT_MS) {
         finish();
         return;
