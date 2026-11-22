@@ -575,3 +575,58 @@
     animation: none;
   }
 }
+
+/* A command or code in an answer: a dark well with its language and a Copy button. */
+.qa__code {
+  overflow: hidden;
+  border: 1px solid var(--dd-panel-line);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--dd-ink) 4%, var(--dd-panel-bottom));
+}
+
+.qa__code-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 5px 8px 5px 12px;
+  border-bottom: 1px solid var(--dd-panel-line);
+  color: var(--dd-muted);
+  font-size: 11.5px;
+}
+
+.qa__code-bar button {
+  padding: 3px 8px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--dd-muted);
+  font: inherit;
+  cursor: pointer;
+}
+
+.qa__code-bar button:hover {
+  background: color-mix(in srgb, var(--dd-ink) 7%, transparent);
+  color: var(--dd-ink);
+}
+
+.qa__code pre {
+  margin: 0;
+  padding: 12px 14px;
+  overflow-x: auto;
+  font-family: var(--dd-mono);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.qa__code code {
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: inherit;
+  white-space: pre;
+}
+
+.qa__answer strong {
+  font-weight: 650;
+}

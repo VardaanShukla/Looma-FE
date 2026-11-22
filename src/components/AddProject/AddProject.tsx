@@ -55,7 +55,7 @@ export default function AddProject({ onClose, onAdded, onGitHub, onCodeCommit }:
     checkStatus();
   }, [checkStatus]);
 
-  // Projects in folders `devdash init` remembered, to pick instead of typing.
+  // Projects in folders `looma init` remembered, to pick instead of typing.
   const [candidates, setCandidates] = useState<Candidate[]>([]);
 
   useEffect(() => {

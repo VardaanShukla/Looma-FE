@@ -321,12 +321,6 @@
   border-left: 1px solid var(--dd-panel-line);
 }
 
-.details__eyebrow {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--dd-muted);
-}
-
 .details__name {
   margin: 4px 0 2px;
   font-size: 20px;

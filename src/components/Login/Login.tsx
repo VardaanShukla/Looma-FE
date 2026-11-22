@@ -192,7 +192,7 @@ export default function Login({ setup, onSignedIn }: Props) {
       </ul>
       <p className="login__hint">
         {setup ? "Forget it later? " : "Forgot it? "}
-        Run <code>devdash password</code> in a terminal to set a new one.
+        Run <code>looma password</code> in a terminal to set a new one.
       </p>
     </form>
   );

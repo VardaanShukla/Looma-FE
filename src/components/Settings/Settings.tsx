@@ -623,7 +623,7 @@ type Switch = "start" | "stop";
 
 // What Start and Stop go through, under the status.
 const MANAGED_BY: Record<NonNullable<OllamaState["managed_by"]>, string> = {
-  devdash: "Started from Looma",
+  looma: "Started from Looma",
   service: "Runs as a Linux system service",
   app: "Runs from the Ollama app",
   command: "Started with ollama serve",
@@ -1181,7 +1181,7 @@ function Account({ username, passwordSet, onSignOut, onPasswordSet }: {
         <PasswordForm passwordSet={passwordSet} onChanged={onPasswordSet} />
       </div>
       <p className="settings__note">
-        Forgot the password? Run <code>devdash password</code> in a terminal to set a new one.
+        Forgot the password? Run <code>looma password</code> in a terminal to set a new one.
       </p>
     </section>
   );
@@ -1366,7 +1366,7 @@ function Recording() {
 }
 
 // Where clones go, remembered in this browser.
-const CLONE_FOLDER = "devdash:clone-folder";
+const CLONE_FOLDER = "looma:clone-folder";
 
 function savedCloneFolder(): string {
   try {

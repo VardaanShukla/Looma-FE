@@ -39,7 +39,7 @@ import type {
   Sync,
 } from "./types";
 
-// In dev, Vite forwards /api to `devdash serve` (see vite.config.ts).
+// In dev, Vite forwards /api to `looma serve` (see vite.config.ts).
 
 export class ApiError extends Error {
   constructor(message: string, readonly status: number) {
@@ -48,7 +48,7 @@ export class ApiError extends Error {
 }
 
 // Sent on window when the API turns this browser away for not being signed in.
-export const SIGNED_OUT = "devdash:signed-out";
+export const SIGNED_OUT = "looma:signed-out";
 
 async function request<T>(path: string, method = "GET", body?: unknown): Promise<T> {
   let response: Response;
@@ -59,7 +59,7 @@ async function request<T>(path: string, method = "GET", body?: unknown): Promise
       body: body === undefined ? undefined : JSON.stringify(body),
     });
   } catch {
-    throw new ApiError("Can't reach the Looma backend. Start it with `devdash serve`.", 0);
+    throw new ApiError("Can't reach the Looma backend. Start it with `looma serve`.", 0);
   }
   if (!response.ok) {
     // The dashboard's sign-in ran out or was ended elsewhere: show the login again.
@@ -68,11 +68,11 @@ async function request<T>(path: string, method = "GET", body?: unknown): Promise
     const detail = typeof body?.detail === "string" ? body.detail : response.statusText;
     // The dev proxy answers 5xx when nothing is listening on the backend's port.
     if (response.status >= 500 && !body) {
-      throw new ApiError("Can't reach the Looma backend. Start it with `devdash serve`.", 0);
+      throw new ApiError("Can't reach the Looma backend. Start it with `looma serve`.", 0);
     }
     // A route the running backend doesn't know: it was started before an update.
     if (response.status === 405) {
-      throw new ApiError("The running backend is older than this page. Stop `devdash serve` and start it again.", 405);
+      throw new ApiError("The running backend is older than this page. Stop `looma serve` and start it again.", 405);
     }
     throw new ApiError(detail, response.status);
   }

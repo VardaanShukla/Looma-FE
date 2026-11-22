@@ -147,7 +147,7 @@
   }
 }
 
-/* Projects found in folders `devdash init` remembered: one click fills the path. */
+/* Projects found in folders `looma init` remembered: one click fills the path. */
 .candidates {
   display: grid;
   gap: 6px;

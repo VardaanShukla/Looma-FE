@@ -1,4 +1,4 @@
-// Mirrors the response models in devdash-be/src/devdash/api/app.py.
+// Mirrors the response models in looma-be/src/looma/api/app.py.
 
 export type Repo = {
   id: number;
@@ -273,7 +273,7 @@ export type OllamaState = {
   started_here: boolean;
   // What runs it: Start and Stop go through the same thing. "service" is the Linux systemd
   // service, which takes an administrator's password.
-  managed_by: "devdash" | "service" | "app" | "command" | null;
+  managed_by: "looma" | "service" | "app" | "command" | null;
   // Start and Stop ask for your password (the page asks for your OK first).
   needs_admin: boolean;
   // On this computer. An Ollama that OLLAMA_HOST points elsewhere is started and stopped there.
@@ -534,7 +534,7 @@ export type RecordingHealth = {
   tools: string[];
 };
 
-// A project found in a folder `devdash init` remembered, not added yet.
+// A project found in a folder `looma init` remembered, not added yet.
 export type Candidate = { path: string; name: string; folder: string };
 
 export type AuthStatus = { password_set: boolean; signed_in: boolean; username?: string };

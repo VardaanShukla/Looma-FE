@@ -107,7 +107,7 @@ type Props = {
   off?: Partial<Record<View, string>>;
 };
 
-const COLLAPSED_KEY = "devdash:menu-collapsed";
+const COLLAPSED_KEY = "looma:menu-collapsed";
 
 function savedCollapsed(): boolean {
   try {

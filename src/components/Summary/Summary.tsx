@@ -310,7 +310,7 @@ const KT_KINDS: { id: KtKind; title: string; what: string }[] = [
 function Kt(props: Props) {
   const [kind, setKind] = useState<KtKind>(() => {
     try {
-      return localStorage.getItem("devdash.kt-kind") === "detailed" ? "detailed" : "brief";
+      return localStorage.getItem("looma.kt-kind") === "detailed" ? "detailed" : "brief";
     } catch {
       return "brief";
     }
@@ -318,7 +318,7 @@ function Kt(props: Props) {
   const pick = (next: KtKind) => {
     setKind(next);
     try {
-      localStorage.setItem("devdash.kt-kind", next);
+      localStorage.setItem("looma.kt-kind", next);
     } catch {
       // Not kept; the brief KT shows next time.
     }
@@ -527,7 +527,7 @@ function BriefKt({ summary, scope, ai, loadGuide, writeGuide, imageUrl, onSigned
 }
 
 // How long the last KT took to write here, to pace the progress bar.
-const KT_SECONDS = "devdash:kt-seconds";
+const KT_SECONDS = "looma:kt-seconds";
 const DEFAULT_KT_SECONDS = 40;
 
 function expected(): number {
